@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import axios, { AxiosResponse } from "axios";
+import "./WebcamCapture.css";
 
 interface WebcamCaptureProps {
   setCapturedImage: (image: string | null) => void;
@@ -13,7 +14,13 @@ interface WebcamCaptureProps {
 }
 
 interface VerificationResponse {
-  status: "verified" | "identity_registered" | "face_not_detected" | "multiple_faces" | "mismatch" | "no_reference_face";
+  status:
+    | "verified"
+    | "identity_registered"
+    | "face_not_detected"
+    | "multiple_faces"
+    | "mismatch"
+    | "no_reference_face";
   message?: string;
 }
 
@@ -33,21 +40,28 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
   const webcamRef = useRef<Webcam>(null);
   const [canCapture, setCanCapture] = useState<boolean>(false);
   const [faceDetected, setFaceDetected] = useState<boolean>(false);
-  const [verificationComplete, setVerificationComplete] = useState<boolean>(false);
+  const [verificationComplete, setVerificationComplete] =
+    useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [multipleFacesDetected, setMultipleFacesDetected] = useState<boolean>(false);
+  const [multipleFacesDetected, setMultipleFacesDetected] =
+    useState<boolean>(false);
   const [isDetectionPaused, setIsDetectionPaused] = useState<boolean>(false);
   const [cameraReady, setCameraReady] = useState<boolean>(false);
   const [lastAlertTime, setLastAlertTime] = useState<number>(0);
-  const [faceDetectionStatus, setFaceDetectionStatus] = useState<"idle" | "detecting" | "verified">("idle");
-  const [faceVerifiedAlertShown, setFaceVerifiedAlertShown] = useState<boolean>(false);
+  const [faceDetectionStatus, setFaceDetectionStatus] = useState<
+    "idle" | "detecting" | "verified"
+  >("idle");
+  const [faceVerifiedAlertShown, setFaceVerifiedAlertShown] =
+    useState<boolean>(false);
   const [lastDetectionTime, setLastDetectionTime] = useState<number>(0);
   const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if webcam is accessible
   const handleUserMedia = (): void => {
     setCameraReady(true);
-    setAlertMessage("✅ Camera ready - Please position your face in the circle");
+    setAlertMessage(
+      "✅ Camera ready - Please position your face in the circle"
+    );
   };
 
   const handleUserMediaError = (): void => {
@@ -56,7 +70,10 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
   };
 
   // Rate-limited alert function
-  const setRateLimitedAlert = (message: string, minInterval: number = 2000): void => {
+  const setRateLimitedAlert = (
+    message: string,
+    minInterval: number = 2000
+  ): void => {
     const now = Date.now();
     if (now - lastAlertTime >= minInterval) {
       setAlertMessage(message);
@@ -75,7 +92,13 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
 
   // Instant face detection for user guidance (pre-verification)
   useEffect(() => {
-    if (verificationComplete || !webcamRef.current || !applicantId || !cameraReady) return;
+    if (
+      verificationComplete ||
+      !webcamRef.current ||
+      !applicantId ||
+      !cameraReady
+    )
+      return;
 
     let animationFrameId: number;
     let lastCheckTime = 0;
@@ -109,20 +132,28 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
         formData.append("applicant_id", applicantId);
 
         setFaceDetectionStatus("detecting");
-        const res = await axios.post<VerificationResponse>("http://localhost:8000/verify", formData);
+        const res = await axios.post<VerificationResponse>(
+          "http://localhost:8000/verify",
+          formData
+        );
 
         if (res.data.status === "multiple_faces") {
           setMultipleFacesDetected(true);
           setFaceDetected(false);
           setCanCapture(false);
-          setRateLimitedAlert("⚠️ Multiple faces detected - only one person allowed");
+          setRateLimitedAlert(
+            "⚠️ Multiple faces detected - only one person allowed"
+          );
         } else if (res.data.status === "face_not_detected") {
           setMultipleFacesDetected(false);
           setFaceDetected(false);
           setCanCapture(false);
-          setRateLimitedAlert("🚫 Face not detected - please position your face in the circle");
+          setRateLimitedAlert(
+            "🚫 Face not detected - please position your face in the circle"
+          );
         } else if (
-          (res.data.status === "verified" || res.data.status === "identity_registered") &&
+          (res.data.status === "verified" ||
+            res.data.status === "identity_registered") &&
           !verificationComplete
         ) {
           setMultipleFacesDetected(false);
@@ -157,10 +188,14 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
     }
 
     const DETECTION_INTERVAL = 3000;
-    const PAUSE_AFTER_ALERT = 2000;
 
     const performDetection = async (): Promise<void> => {
-      if (isDetectionPaused || !webcamRef.current || !webcamRef.current.video?.readyState) return;
+      if (
+        isDetectionPaused ||
+        !webcamRef.current ||
+        !webcamRef.current.video?.readyState
+      )
+        return;
 
       try {
         const now = Date.now();
@@ -214,7 +249,10 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
     }
 
     // Start new interval
-    detectionIntervalRef.current = setInterval(performDetection, DETECTION_INTERVAL);
+    detectionIntervalRef.current = setInterval(
+      performDetection,
+      DETECTION_INTERVAL
+    );
 
     return () => {
       if (detectionIntervalRef.current) {
@@ -235,7 +273,7 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
     setIsDetectionPaused(true);
     setFaceVerifiedAlertShown(false);
     setRateLimitedAlert(`⚠️ ${message}`);
-    
+
     try {
       await captureAndReportMalpractice(message);
     } catch (error) {
@@ -247,7 +285,9 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
     }, 2000);
   };
 
-  const captureAndReportMalpractice = async (message: string): Promise<void> => {
+  const captureAndReportMalpractice = async (
+    message: string
+  ): Promise<void> => {
     try {
       if (!webcamRef.current) return;
 
@@ -276,7 +316,9 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
     } catch (error) {
       console.error(
         "Error reporting malpractice:",
-        axios.isAxiosError(error) ? error.response?.data || error.message : error
+        axios.isAxiosError(error)
+          ? error.response?.data || error.message
+          : error
       );
       setRateLimitedAlert("⚠️ Failed to report malpractice");
       throw error;
@@ -311,7 +353,9 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
     }
   };
 
-  const verifyIdentity = async (imageSrc: string): Promise<AxiosResponse<VerificationResponse>> => {
+  const verifyIdentity = async (
+    imageSrc: string
+  ): Promise<AxiosResponse<VerificationResponse>> => {
     try {
       if (!imageSrc) throw new Error("No image captured");
 
@@ -322,11 +366,15 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
       formData.append("file", file);
       formData.append("applicant_id", applicantId);
 
-      return await axios.post<VerificationResponse>("http://localhost:8000/verify", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      return await axios.post<VerificationResponse>(
+        "http://localhost:8000/verify",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
     } catch (error) {
       console.error("Verification error:", error);
       throw error;
@@ -335,7 +383,9 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
 
   const capture = async (): Promise<void> => {
     if (!canCapture || !applicantId || !webcamRef.current) {
-      setRateLimitedAlert("🚫 Cannot capture – No valid face detected or missing user ID");
+      setRateLimitedAlert(
+        "🚫 Cannot capture – No valid face detected or missing user ID"
+      );
       return;
     }
 
@@ -380,7 +430,11 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
     } catch (error) {
       console.error("Error during verification:", error);
       setRateLimitedAlert(
-        `❌ Error: ${axios.isAxiosError(error) ? error.response?.data?.message || error.message : error}`
+        `❌ Error: ${
+          axios.isAxiosError(error)
+            ? error.response?.data?.message || error.message
+            : error
+        }`
       );
     } finally {
       setIsLoading(false);
@@ -403,52 +457,21 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
     return "Face Not Detected";
   };
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+ return (
+    <div className="webcam-container">
       <div
+        className={`webcam-wrapper ${cameraReady ? "ready" : ""}`}
         style={{
-          borderRadius: "50%",
-          overflow: "hidden",
-          border: `4px solid ${getBorderColor()}`,
-          width: 300,
-          height: 300,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          margin: "20px 0",
+          borderColor: getBorderColor(),
           boxShadow: `0 0 20px ${getBorderColor()}80`,
-          position: "relative",
-          transition: "border-color 0.3s, box-shadow 0.3s",
         }}
       >
         {!cameraReady && (
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "rgba(0,0,0,0.5)",
-              color: "white",
-              zIndex: 10,
-            }}
-          >
-            Loading camera...
-          </div>
+          <div className="loading-overlay">Loading camera...</div>
         )}
         <Webcam
           ref={webcamRef}
-          style={{
-            width: 300,
-            height: 300,
-            objectFit: "cover",
-            borderRadius: "50%",
-            display: cameraReady ? "block" : "none",
-          }}
+          className={`webcam ${cameraReady ? "show" : "hide"}`}
           screenshotFormat="image/jpeg"
           width={300}
           height={300}
@@ -464,22 +487,14 @@ const WebcamCapture: React.FC<WebcamCaptureProps> = ({
 
       {!verificationComplete && (
         <button
-          onClick={capture}
+          className={`capture-button ${
+            canCapture && !isLoading ? "active" : "disabled"
+          }`}
           style={{
-            marginTop: 20,
-            padding: "10px 20px",
-            fontSize: "16px",
-            borderRadius: "5px",
-            backgroundColor: canCapture && !isLoading ? "#4CAF50" : "#ccc",
-            color: "white",
-            cursor: canCapture && !isLoading ? "pointer" : "not-allowed",
-            border: "none",
-            transition: "background-color 0.3s, transform 0.2s",
             opacity: isLoading ? 0.7 : 1,
             transform: canCapture && !isLoading ? "scale(1)" : "scale(0.98)",
-            minWidth: 200,
-            fontWeight: "bold",
           }}
+          onClick={capture}
           disabled={!canCapture || isLoading || !cameraReady}
         >
           {getButtonText()}

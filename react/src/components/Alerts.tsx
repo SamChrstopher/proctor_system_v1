@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
+import "./Alerts.css"; // ✅ Import external CSS
 
 interface AlertsProps {
   message: string;
@@ -19,34 +20,14 @@ const Alerts: React.FC<AlertsProps> = ({ message }) => {
 
   if (!isVisible) return null;
 
-  const backgroundColor = message.startsWith('✅')
-    ? '#ddffdd'
-    : message.startsWith('⚠️')
-    ? '#fff3cd'
-    : '#ffdddd';
-
-  const borderColor = message.startsWith('✅')
-    ? '#4CAF50'
-    : message.startsWith('⚠️')
-    ? '#FFC107'
-    : '#f44336';
+  const typeClass = message.startsWith("✅")
+    ? "alert-success"
+    : message.startsWith("⚠️")
+    ? "alert-warning"
+    : "alert-error";
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 20,
-        right: 20,
-        backgroundColor,
-        padding: '10px 20px',
-        borderRadius: '5px',
-        boxShadow: '0 0 10px rgba(0,0,0,0.3)',
-        maxWidth: '300px',
-        fontSize: '14px',
-        animation: 'fadeIn 0.5s',
-        borderLeft: `5px solid ${borderColor}`,
-      }}
-    >
+    <div className={`alert-box ${typeClass}`}>
       <p>{message}</p>
     </div>
   );
